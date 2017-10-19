@@ -1,10 +1,28 @@
-##Lab 4 - Create a Spring Cloud Eureka Server and Client
+## Lab 4 - Create a Spring Cloud Eureka Server and Client
 
 **Part 1, create server**
 
-1. Create a new Spring Boot application.  Name the project "lab-4-eureka-server”, and use this value for the Artifact.  Use JAR packaging and the latest versions of Java.  Use a version of Boot < 1.3.x.  No need to select any dependencies.
+1. Create a new Spring Boot application.
+  - Name the project "lab-4-eureka-server”, and use this value for the Artifact.  
+  - Use JAR packaging and the latest versions of Java.  
+  - Boot version 1.5.x is the most recent at the time of this writing, but you can use the latest stable version available.  
+  - No need to select any dependencies.
 
-2. Edit the POM (or gradle) file.  Alter the parent group Id to be "org.springframework.cloud" and artifact to be "spring-cloud-starter-parent".  Version Camden.SR2 is the most recent stable version at the time of this writing. 
+2. Edit the POM (or Gradle) file.  Add a “Dependency Management” section (after <properties>, before <dependencies>) to identify the spring cloud parent POM.  "Dalston.RELEASE" is the most recent stable version at the time of this writing, but you can use the latest stable version available.  Example:
+
+```
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>Dalston.RELEASE</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+```
 
 3. Add a dependency for group "org.springframework.cloud" and artifact "spring-cloud-starter-eureka-server".  You do not need to specify a version -- this is already defined in the parent project.  
 
@@ -20,10 +38,14 @@
     
     In this next section we will create several client applications that will work together to compose a sentence.  The sentence will contain a subject, verb, article, adjective and noun such as “I saw a leaky boat” or “You have the reasonable book”.  5 services will randomly generate the word components, and a 6th service will assemble them into a sentence.
 
-7. Create a new Spring Boot web application.  Use a version of Boot < 1.3.x.  Name the application “lab-4-subject”, and use this value for the Artifact.  Use JAR packaging and the latest versions of Java and Boot.  Add actuator and web as a dependencies.
+7. Create a new Spring Boot web application.  
+  - Name the project "lab-4-subject”, and use this value for the Artifact.  
+  - Use JAR packaging and the latest versions of Java.  
+  - Use Boot version 1.5.x or the latest stable version available.  
+  - Add actuator and web as a dependencies.
 
-8. Modify the POM (or Gradle) file:  
-  - Alter the parent group Id to be "org.springframework.cloud" and artifact to be "spring-cloud-starter-parent".  Version Camden.SR2 is the most recent stable version at the time of this writing. 
+8. Modify the POM (or Gradle) file.  
+  - Add the same dependency management section you inserted into the server POM.  (You could simply change the parent entries, but most clients will probably be ordinary applications with their own parents.)
   - Add a dependency for group "org.springframework.cloud" and artifact "spring-cloud-starter-eureka".
 
 9. Modify the Application class.  Add @EnableDiscoveryClient.
@@ -43,7 +65,7 @@
   - Add a String member variable named “words”.  Annotate it with @Value("${words}”).
   - Add the following method to serve the resource (optimize this code if you like):
   ```
-    @RequestMapping("/")
+    @GetMapping("/")
     public @ResponseBody String getWord() {
       String[] wordArray = words.split(",");
       int i = (int)Math.round(Math.random() * (wordArray.length - 1));
@@ -71,7 +93,11 @@
   - spring.application.name: “lab-4-noun”
   - words: “boat,book,vote,seat,backpack,partition,groundhog”
 
-17. Create a new Spring Boot web application.  Name the application “lab-4-sentence”, and use this value for the Artifact.  Use JAR packaging and the latest versions of Java and Boot.  Add actuator and web as a dependencies.  Alter the POM (or Gradle) dependencies just as you did in step 8. 
+17. Create a new Spring Boot web application.  
+  - Name the application “lab-4-sentence”, and use this value for the Artifact.  
+  - Use JAR packaging and the latest versions of Java and Boot.  
+  - Add actuator and web as a dependencies.  
+  - Alter the POM (or Gradle) just as you did in step 8. 
 
 18. Add @EnableDiscoveryClient to the Application class.  
 
@@ -84,7 +110,7 @@
   - Use @Autowired to obtain a DiscoveryClient (import from Spring Cloud).
   - Add the following methods to serve the sentence based on the words obtained from the client services. (feel free to optimize / refactor this code as you like:
   ```
-    @RequestMapping("/sentence")
+    @GetMapping("/sentence")
     public @ResponseBody String getSentence() {
       return 
         getWord("LAB-4-SUBJECT") + " "
@@ -113,18 +139,25 @@
 
   We can use Eureka together with the config server to eliminate the need for each client to be configured with the location of the Eureka server
 
-22. Add a new file to your GitHub repository called “application.yml” (or properties).  Add the following key / values (use correct YAML formatting):
+22. Add a new file to your GitHub repository (the same repository used in the last lab) called “application.yml” (or properties).  Add the following key / values (use correct YAML formatting):
   - eureka.client.serviceUrl.defaultZone=http://localhost:8010/eureka/ 
 
 23. Open the common-config-server project.  This is essentially the same config server that you produced in lab 3.  Alter the application.yml to point to your own github repository.  Save all and run this server.  (You can use it as the config server for almost all of the remaining labs in this course.)  
 
-24. Edit each client application’s application.properties file.  Remove the eureka client serviceUrl defaultZone key/value.  We will get this from the config server.
+24. In each client project, add an additional dependency for spring-cloud-config-client: 
 
-25. In each client project, add the following key/value to bootstrap.yml (or bootstrap.properties), using correct YAML formatting: 
+```
+  <dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+  </dependency>
+```
+
+25. Edit each client application’s application.properties file.  Remove the eureka client serviceUrl defaultZone key/value.  We will get this from the config server.
+
+26. In each client project, add the following key/value to bootstrap.yml (or bootstrap.properties), using correct YAML formatting: 
   - spring.cloud.config.uri: http://localhost:8001.
   
-26. Add an additional dependency for spring-cloud-config-client. 
-
 27. Make sure the Eureka server is still running.  Start (or restart) each client. Open [http://localhost:8020/sentence](http://localhost:8020/sentence) to see the completed sentence.
 
 28. If you like, you can experiment with moving the “words” properties to the GitHub repository so they can be served up by the config server.  You’ll need to use separate profile sections within the file (yml) or files with names that match the application names (yml or properties).  A single application.yml file would look something like this:

@@ -8,11 +8,11 @@
 
 3.  Lab 9 has copies of the word server.  Start 5 separate copies of the lab-9-word-server, using the profiles "subject", "verb", "article", "adjective", and "noun".  There are several ways to do this, depending on your preference:
   - If you wish to use Maven, open separate command prompts in the target directory and run these commands:
-    - mvn spring-boot:run -Dspring.profiles.active=subject
-    - mvn spring-boot:run -Dspring.profiles.active=verb
-    - mvn spring-boot:run -Dspring.profiles.active=article
-    - mvn spring-boot:run -Dspring.profiles.active=adjective
-    - mvn spring-boot:run -Dspring.profiles.active=noun
+    - mvn spring-boot:run -Drun.jvmArguments="-Dspring.profiles.active=subject"
+    - mvn spring-boot:run -Drun.jvmArguments="-Dspring.profiles.active=verb"
+    - mvn spring-boot:run -Drun.jvmArguments="-Dspring.profiles.active=article"
+    - mvn spring-boot:run -Drun.jvmArguments="-Dspring.profiles.active=adjective"
+    - mvn spring-boot:run -Drun.jvmArguments="-Dspring.profiles.active=noun"
   - Or if you wish to run from directly within STS, right click on the project, Run As... / Run Configurations... .  From the Spring Boot tab specify a Profile of "subject", UNCHECK live bean support, and Run.  Repeat this process (or copy the run configuration) for the profiles "verb", "article", "adjective", "noun".
 
 4.  Check Eureka at [http://localhost:8010](http://localhost:8010).   Any warnings about running a single instance are expected.  Ensure that each of your 5 applications are eventually listed in the "Application" section, bearing in mind it may take a few moments for the registration process to be 100% complete.	
@@ -35,38 +35,36 @@
 
 9.  Stop the lab-9-gateway application.
 
-10.  Convert this application to use Spring Cloud:  Open the pom.xml and change the parent to org.springframework.cloud / spring-cloud-starter-parent / latest stable version (Camden.SR2 at the time of this writing).  If you prefer to use a dependency management section instead of altering the parent, you may do so.
+10.  Add the dependency for the config client.  org.springframework.cloud / spring-cloud-config-client.  
 
-11.  Add the dependency for the config client.  org.springframework.cloud / spring-cloud-config-client.  
+11.  Add the dependency for Eureka-based service discovery.  org.springframework.cloud / spring-cloud-starter-eureka.
 
-12.  Add the dependency for Eureka-based service discovery.  org.springframework.cloud / spring-cloud-starter-eureka.
+12.  Add the dependency for Zuul.  org.springframework.cloud / spring-cloud-starter-zuul.
 
-13.  Add the dependency for Zuul.  org.springframework.cloud / spring-cloud-starter-zuul.
+13.  If using Eclipse, the M2E plugin may require you to update your project at this point.  Right click on the project / Maven / Update Project
 
-14.  If using Eclipse, the M2E plugin may require you to update your project at this point.  Right click on the project / Maven / Update Project
+14.  Setup the application to obtain configuration from the config server on startup.  Do you remember how to do this?  Open bootstrap.yml and add the location of the configuration server.  For a reminder how to do this, consult the configuration of the word server.
 
-15.  Setup the application to obtain configuration from the config server on startup.  Do you remember how to do this?  Open bootstrap.yml and add the location of the configuration server.  For a reminder how to do this, consult the configuration of the word server.
+15.  Open the main application class and add the annotation to enable Zuul proxy.
 
-16.  Open the main application class and add the annotation to enable Zuul proxy.
-
-17.  Save your work.  Run the application.  Access [http://localhost:8080](http://localhost:8080).  The sentence should build correctly with no errors.  
+16.  Save your work.  Run the application.  Access [http://localhost:8080](http://localhost:8080).  The sentence should build correctly with no errors.  
 
 
 
   **Part 4 - Add a service prefix**  Our web page expects JavaScript and CSS resources to be located under "/js" and "/css" respectively.  Let's adjust our system so that all calls to the back-end microservices are under "/services".
   
-18.  Open the templates/sentences.html page.  Find the TODO comment around line 30.  Change the prefix variable to "/services".  Notice how the variable is used in the next few lines.
+17.  Open the templates/sentences.html page.  Find the TODO comment around line 30.  Change the prefix variable to "/services".  Notice how the variable is used in the next few lines.
 
-19.  Refresh the page in the browser.  We should get errors at this point.  Do you understand why?
+18.  Refresh the page in the browser.  We should get errors at this point.  Do you understand why?
 
-20.  Open application.yml.   Set the zuul prefix to "/services".  Save all work and restart.
+19.  Open application.yml.   Set the zuul prefix to "/services".  Save all work and restart.
 
 
   **Part 5 - Add ETag Support**  At present our server is sending back individual word values for the AJAX requests even if the browser already has the value being sent.  ETags can be used to eliminate the need to send a payload to the client when nothing has changed.
   
-21.  Within your browser, open Developer Tools (Internet Explorer / Chrome), Firebug (Firefox), Web Inspector (Safari), refresh the web page, and examine the network activity.  The browser is receiving a 304 code instead of 200 for the JavaScript and CSS files since they are unchanged.  Let's add similar support for the word AJAX calls if they are unchanged.
+20.  Within your browser, open Developer Tools (Internet Explorer / Chrome), Firebug (Firefox), Web Inspector (Safari), refresh the web page, and examine the network activity.  The browser is receiving a 304 code instead of 200 for the JavaScript and CSS files since they are unchanged.  Let's add similar support for the word AJAX calls if they are unchanged.
 
-22.  Open your main Application class and add this Bean:
+21.  Open your main Application class and add this Bean:
 
     ```
     @Bean
@@ -76,7 +74,7 @@
     ```    
 
 
-23.  Save your work and restart.  Refresh the browser several times.  Notice that we randomly receive 304s for the AJAX requests instead of 200s.  Do you understand why this is random?   
+22.  Save your work and restart.  Refresh the browser several times.  Notice that we randomly receive 304s for the AJAX requests instead of 200s.  Do you understand why this is random?   
 
 **Reflection**
 
